@@ -40,21 +40,52 @@ var checkHtmlFile = function(htmlfile, checksfile) {
     return out;
 };
 
+var checkHtmlFileData = function(htmlfileData, checksfile) {
+    $ = cheerio.load(htmlfileData);
+    var checks = loadChecks(checksfile).sort();
+    var out = {};
+    for(var ii in checks) {
+        var present = $(checks[ii]).length > 0;
+        out[checks[ii]] = present;
+    }
+    return out;
+};
+
+var checkHtmlFileUrl = function(url, checksfile) {
+     
+     rest.get(url).on('complete', function(data) {
+	//console.log("get data back: " + data);
+	var checkJson =  checkHtmlFileData(data,checksfile);
+	var outJson = JSON.stringify(checkJson, null, 4);
+	console.log(outJson); 
+    });
+      
+};
+
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
     return fn.bind({});
 };
 
+//var checkFile
+
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <url>', 'link to idex.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <url>', 'link to idex.html')
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
+    
+    console.log(program.url + " " + program.file);
+    if(program.url == null){
+	//console.log("url is null");
+	var checkJson = checkHtmlFile(program.file, program.checks);
+	var outJson = JSON.stringify(checkJson, null, 4);
+	console.log(outJson);
+     } else {
+	 var checkJson = checkHtmlFileUrl(program.url, program.checks);
+     }
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
